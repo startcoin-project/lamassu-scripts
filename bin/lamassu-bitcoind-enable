@@ -18,10 +18,10 @@ var config = new LamassuConfig(psqlUrl);
 config.readExchangesConfig(function (err, _config) {
   if (err) throw err;
   _config.exchanges.plugins.current.transfer = 'bitcoind';
-  _config.exchanges.plugins.settings.bitcoind = {bitcoindConfigurationPath: '/root/.bitcoin/bitcoin.conf'};
+  _config.exchanges.plugins.settings.bitcoind = {bitcoindConfigurationPath: '/root/.startcoin-v2/startcoin.conf'};
   config.saveExchangesConfig(_config, function (err) {
     if (err) throw err;
     config.end();
-    console.log('lamassu-server is now using bitcoind.');
+    console.log('lamassu-server is now using startcoind.');
   });
 });

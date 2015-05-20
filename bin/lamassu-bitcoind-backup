@@ -17,5 +17,5 @@ BACKUP_FILE=$HOME/archive/wallet-$(date -u "+%Y-%m-%d_%H-%M-%S").bak
 bitcoind backupwallet $BACKUP_FILE
 gpg --batch --trust-model always -e -r $EMAIL_ADDRESS $BACKUP_FILE
 rm $BACKUP_FILE
-export EMAIL="Bitcoin Backup <$EMAIL_ADDRESS>"
-echo "Attached is your encrypted bitcoind backup." | mutt -s "Encrypted bitcoind backup" -a $BACKUP_FILE.gpg -- $EMAIL_ADDRESS
+export EMAIL="StartCOIN Backup <$EMAIL_ADDRESS>"
+echo "Attached is your encrypted startcoind backup." | mutt -s "Encrypted startcoind backup" -a $BACKUP_FILE.gpg -- $EMAIL_ADDRESS

@@ -3,15 +3,15 @@ set -e
 
 echo
 
-if status bitcoind &>/dev/null; then
-  echo "bitcoind is already installed."
+if status startcoind &>/dev/null; then
+  echo "startcoind is already installed."
   exit 4
 fi
 
 EMAIL_ADDRESS=$1
 if [ ! $# -eq 1 ]; then
   echo "Please enter your email address."
-  echo "Bitcoin wallet backups will automatically be sent there."
+  echo "StartCOIN wallet backups will automatically be sent there."
   echo
   echo "lamassu-bitcoind-install <email_address>"
   echo
@@ -36,7 +36,7 @@ if ! gpg --list-public-keys --with-colons $EMAIL_ADDRESS &>/dev/null; then
   exit 3
 fi
 
-echo "Updating your system for bitcoind. Might take a few minutes."
+echo "Updating your system for startcoind. Might take a few minutes."
 {
 apt-get update -y
 apt-get upgrade -y
@@ -47,27 +47,29 @@ DEBIAN_FRONTEND=noninteractive apt-get install software-properties-common python
 cp /usr/share/postfix/main.cf.debian /etc/postfix/main.cf
 /etc/init.d/postfix reload >/dev/null
 
-echo "Installing bitcoind."
+echo "Building and installing startcoind."
 
 {
 dd if=/dev/zero of=/swapfile bs=1M count=1024 &>/dev/null
 mkswap /swapfile
 swapon /swapfile
 echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
-add-apt-repository -y ppa:bitcoin/bitcoin &>/dev/null
-apt-get update -y
-mkdir ~/.bitcoin/
-apt-get install bitcoind -y
+
+apt-get install git build-essential libssl-dev libboost-all-dev libdb4.8-dev libdb4.8++-dev libboost1.37-dev libminiupnpc-dev -y
+git clone https://github.com/startcoin-project/startcoin.git
+cd startcoin/src
+make -f makefile.unix
+cp startcoind /usr/bin/startcoind
 
 # Set up firewall
 ufw allow ssh
 ufw allow 8081/tcp
 ufw allow 3000/tcp
-ufw allow 8333/tcp
+ufw allow 9247/tcp
 echo 'y' | ufw enable
 } &>/dev/null
 
-config="/root/.bitcoin/bitcoin.conf"
+config="/root/.startcoin-v2/startcoin.conf"
 touch $config
 echo "server=1" > $config
 echo "daemon=0" >> $config
@@ -78,8 +80,8 @@ echo "rpcuser=$randUser" >> $config
 echo "rpcpassword=$randPass" >> $config
 echo "keypool=1000" >> $config
 
-cat > "/etc/init/bitcoind.conf" <<EOF
-description "bitcoind"
+cat > "/etc/init/startcoind.conf" <<EOF
+description "startcoind"
 
 start on runlevel [2345]
 stop on runlevel [016]
@@ -89,13 +91,13 @@ console log
 respawn
 respawn limit 8 4
 
-exec start-stop-daemon --start -c root --exec /usr/bin/bitcoind
+exec start-stop-daemon --start -c root --exec /usr/bin/startcoind
 EOF
 
-start bitcoind
+start startcoind
 
-echo "Waiting for bitcoind to load."
-until bitcoind getblockcount &>/dev/null; do sleep 1; done
+echo "Waiting for startcoind to load."
+until startcoind getblockcount &>/dev/null; do sleep 1; done
 
 # Set up wallet backup cron job
 echo -e "MAILTO=$EMAIL_ADDRESS\n00 05 * * * /usr/local/bin/lamassu-bitcoind-backup \"$EMAIL_ADDRESS\"" | \
@@ -104,13 +106,13 @@ crontab -
 /usr/local/bin/lamassu-bitcoind-backup $EMAIL_ADDRESS
 
 echo
-echo "Installation was successful! bitcoind is now running."
+echo "Installation was successful! startcoind is now running."
 echo
-echo "It will take about 24 hours for bitcoind to load the entire blockchain."
+echo "It will take about 24 hours for startcoind to load the entire blockchain."
 echo
 echo "Please check your email for your first wallet backup."
 echo
 echo "When your blockchain has caught up, run lamassu-bitcoind-enable to start"
-echo "using bitcoind as your remote server wallet."
+echo "using startcoind as your remote server wallet."
 echo
 
