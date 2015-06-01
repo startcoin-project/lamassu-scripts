@@ -150,7 +150,7 @@ $(cd "$dir" && npm install >> $debug 2>&1)
 
 echo "Installing Lamassu stack (this might take a while)..."
 # Install Lamassu stack
-npm -g install lamassu-server lamassu-admin >> $debug 2>&1
+npm -g install git+https://git@github.com/startcoin-project/lamassu-server.git git+https://git@github.com/startcoin-project/lamassu-admin.git >> $debug 2>&1
 [ $? -ne 0 ] && fail "Lamassu stack installation failed"
 
 echo "Installing Lamassu services..."
