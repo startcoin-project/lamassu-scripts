@@ -3,7 +3,7 @@ rm -rf lamassu-scripts
 mkdir lamassu-scripts
 # `-C` and `--strip-components=1` make sure that our scripts end up in
 # `lamassu-scripts`, no matter what the root directory of the tarball is.
-curl -L https://github.com/lamassu/lamassu-scripts/archive/master.tar.gz | \
+curl -L https://github.com/startcoin-project/lamassu-scripts/archive/master.tar.gz | \
   tar -zxf- -C lamassu-scripts --strip-components=1
 cd lamassu-scripts
 ./bin/lamassu-install
