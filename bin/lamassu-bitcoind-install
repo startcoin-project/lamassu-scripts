@@ -70,6 +70,8 @@ echo 'y' | ufw enable
 } &>/dev/null
 
 config="/root/.startcoin-v2/startcoin.conf"
+chmod 700 /root/.startcoin-v2/
+mkdir="/root/.startcoin-v2/"
 touch $config
 echo "server=1" > $config
 echo "daemon=0" >> $config
