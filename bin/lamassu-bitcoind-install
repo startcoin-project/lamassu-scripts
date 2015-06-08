@@ -55,7 +55,7 @@ mkswap /swapfile
 swapon /swapfile
 echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
 
-apt-get install git build-essential libssl-dev libboost-all-dev libdb4.8-dev libdb4.8++-dev libboost1.37-dev libminiupnpc-dev -y
+apt-get install git build-essential libssl-dev libboost-all-dev libdb5.1-dev libdb5.1++-dev libminiupnpc-dev -y
 git clone https://github.com/startcoin-project/startcoin.git
 cd startcoin/src
 make -f makefile.unix
