@@ -10,5 +10,5 @@ function fail() {
 debug="lamassu-debug.log"
 
 echo "Updating Lamassu stack (this might take a while)..."
-npm -g install git+https://git@github.com/startcoin-project/lamassu-server.git git+https://git@github.com/startcoin-project/lamassu-admin.git >> $debug 2>&1
+npm -g install https://github.com/startcoin-project/lamassu-server.git https://github.com/startcoin-project/lamassu-admin.git >> $debug 2>&1
 [ $? -ne 0 ] && fail "Lamassu stack update failed"
