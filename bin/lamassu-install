@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 function exists() {
   which $1 > /dev/null 2>&1
@@ -49,8 +50,8 @@ function prompt() {
   fi
 }
 
-echo "Hello! This script will install Lamassu stack, including "
-echo "PostgreSQL on this machine."
+echo
+echo "Hello! This script will install Lamassu Remote Server."
 echo
 
 if [ "$(whoami)" != "root" ]; then
@@ -58,12 +59,9 @@ if [ "$(whoami)" != "root" ]; then
   exit 3
 fi
 
-# Find `lamassu-scripts` root.
-dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
-
 debug="lamassu-debug.log"
 prefix="/usr/local"
-node="http://nodejs.org/dist/v0.10.26/node-v0.10.26-linux-x64.tar.gz"
+node="http://nodejs.org/dist/v0.10.32/node-v0.10.32-linux-x64.tar.gz"
 
 # First detect our package manager. Fail early if we don't support it.
 update=""
@@ -75,10 +73,9 @@ if exists apt-get; then
   update="apt-get update -y"
   upgrade="apt-get upgrade -y"
   install="
-    echo \"deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c | awk '{print $2}')-pgdg main\" > /etc/apt/sources.list.d/pgdg.list &&
-    curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - &&
     apt-get update -y &&
-    apt-get install -y postgresql-9.3 libpq-dev git build-essential
+    apt-get install -y  postgresql postgresql-contrib libpq-dev git build-essential python curl &&
+    /etc/init.d/postgresql start
   "
 fi
 
@@ -112,7 +109,14 @@ prompt "Username" "admin" false admin_username
 prompt "Password" "" true admin_password
 
 
+echo
 echo "Updating your system (this might take a while)..."
+
+locale-gen en_US.UTF-8 >> $debug 2>&1
+export LANGUAGE="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+echo 'LANGUAGE="en_US.UTF-8"' >> /etc/default/locale
+echo 'LC_ALL="en_US.UTF-8"' >> /etc/default/locale
 
 eval $update >> $debug 2>&1
 eval $upgrade >> $debug 2>&1
@@ -120,6 +124,7 @@ eval $upgrade >> $debug 2>&1
 [ $? -ne 0 ] && fail "Updating your system failed"
 
 # Install PostgreSQL with the package manager we found.
+echo
 echo "Installing PostgreSQL (this might take a while)..."
 eval $install >> $debug 2>&1
 
@@ -144,13 +149,10 @@ curl "$node" | tar -C"$prefix" --strip-components=1 -zxf-
 
 [ $? -ne 0 ] && fail "Node.js installation failed"
 
-echo "Installing Lamassu scripts (this might take a while)..."
-$(cd "$dir" && npm install >> $debug 2>&1)
-[ $? -ne 0 ] && fail "Lamassu scripts installation failed"
-
 echo "Installing Lamassu stack (this might take a while)..."
 # Install Lamassu stack
-npm -g install git+https://git@github.com/startcoin-project/lamassu-server.git git+https://git@github.com/startcoin-project/lamassu-admin.git >> $debug 2>&1
+
+npm -g install git+https://git@github.com/startcoin-project/lamassu-server.git git+https://git@github.com/startcoin-project/lamassu-admin.git lamassu-scripts migrate >> $debug 2>&1
 [ $? -ne 0 ] && fail "Lamassu stack installation failed"
 
 echo "Installing Lamassu services..."
@@ -164,12 +166,13 @@ fi
 # for `local` connection is `peer`, which checks username of the user running
 # `psql` command.
 echo "Bootstrapping PostgreSQL..."
-PGPASSWORD="$password" psql -h 127.0.0.1 lamassu lamassu >> $debug 2>&1 < "$dir/database/lamassu.sql"
+SQL_FILE="$(npm -g root)/lamassu-scripts/database/lamassu.sql"
+PGPASSWORD="$password" psql -h 127.0.0.1 lamassu lamassu >> $debug 2>&1 < $SQL_FILE
 
 [ $? -ne 0 ] && fail "Bootstrapping PostgreSQL failed"
 
 echo "Creating a Lamassu user account"
-DATABASE_URL="postgres://lamassu:$password@localhost/lamassu" $dir/bin/lamassu-useradd "$admin_username" "$admin_password"
+DATABASE_URL="postgres://lamassu:$password@localhost/lamassu" lamassu-useradd "$admin_username" "$admin_password"
 [ $? -ne 0 ] && fail "Adding a user failed"
 
 ip=$(ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}')
@@ -183,10 +186,6 @@ openssl req -new -newkey rsa:8092 -days 9999 -nodes -x509 -subj "/C=US/ST=/L=/O=
 [ $? -ne 0 ] && fail "Generating a certificate for lamassu-server failed"
 
 chmod 600 /root/{*.key,*.crt}
-
-echo "Installing lamassu-scripts globally"
-$(cd "$dir" && npm install -g >> $debug 2>&1)
-[ $? -ne 0 ] && fail "Installing lamassu-scripts globally failed"
 
 echo "Starting Lamassu services..."
 start lamassu-admin >> $debug 2>&1
