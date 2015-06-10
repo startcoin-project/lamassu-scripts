@@ -75,6 +75,7 @@ chmod 700 /root/.startcoin-v2/
 touch $config
 echo "server=1" > $config
 echo "daemon=0" >> $config
+echo "rpcport=8332" >> $config
 echo "connections=40" >> $config
 randUser=`< /dev/urandom tr -dc A-Za-z0-9 | head -c30`
 randPass=`< /dev/urandom tr -dc A-Za-z0-9 | head -c30`
